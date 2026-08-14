@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ruang Refleksi — Tes Pola Pikir Guru</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#122420;
+    --bg-2:#1a332c;
+    --paper:#f4efe0;
+    --paper-dim:#e9e2cd;
+    --ink:#132420;
+    --ink-soft:#4d5f56;
+    --gold:#d7a544;
+    --gold-dim:#a5822f;
+    --sage:#8fb48f;
+    --sage-dim:#5f8264;
+    --rose:#b96b60;
+    --rose-dim:#8a4d45;
+    --line: rgba(244,239,224,0.16);
+    --line-strong: rgba(244,239,224,0.32);
+    --shadow: 0 18px 40px -18px rgba(0,0,0,0.55);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1100px 700px at 12% -10%, rgba(215,165,68,0.10), transparent 55%),
+      radial-gradient(900px 600px at 100% 0%, rgba(143,180,143,0.08), transparent 55%),
+      var(--bg);
+    color:var(--paper);
+    font-family:'Work Sans', sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .noise{
+    position:fixed; inset:0; pointer-events:none; z-index:0; opacity:0.05; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+  h1,h2,h3,.display{ font-family:'Fraunces', serif; letter-spacing:-0.01em; }
+  .mono{ font-family:'IBM Plex Mono', monospace; letter-spacing:0.02em; }
+  .app{ position:relative; z-index:1; max-width:900px; margin:0 auto; padding:40px 24px 80px; }
+
+  /* top progress rail */
+  .rail{ display:flex; align-items:center; gap:10px; margin-bottom:36px; }
+  .rail-track{ flex:1; height:2px; background:var(--line); position:relative; }
+  .rail-fill{ position:absolute; left:0; top:0; height:100%; background:var(--gold); transition:width .5s ease; }
+  .rail-label{ font-size:11px; text-transform:uppercase; letter-spacing:0.14em; color:var(--gold); white-space:nowrap; }
+
+  .screen{ display:none; animation: rise .55s ease both; }
+  .screen.active{ display:block; }
+  @keyframes rise{ from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);} }
+
+  .eyebrow{ font-size:12px; text-transform:uppercase; letter-spacing:0.22em; color:var(--sage); margin:0 0 14px; display:flex; align-items:center; gap:10px; }
+  .eyebrow::before{ content:""; width:22px; height:1px; background:var(--sage); display:inline-block; }
+  h1.title{ font-size:clamp(32px,5vw,52px); font-weight:600; margin:0 0 16px; line-height:1.04; }
+  .accent-growth{ color:var(--sage); }
+  .accent-fixed{ color:var(--rose); }
+  .lede{ font-size:17px; line-height:1.65; color:var(--paper-dim); max-width:60ch; margin:0 0 34px; }
+
+  /* flip cards */
+  .card-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:18px; margin-bottom:34px; }
+  @media (max-width:640px){ .card-grid{ grid-template-columns:1fr; } }
+  .flip-card{ perspective:1400px; height:210px; cursor:pointer; }
+  .flip-inner{ position:relative; width:100%; height:100%; transition:transform .65s cubic-bezier(.4,.2,.2,1); transform-style:preserve-3d; }
+  .flip-card.flipped .flip-inner{ transform:rotateY(180deg); }
+  .flip-face{ position:absolute; inset:0; backface-visibility:hidden; border-radius:6px; padding:22px; display:flex; flex-direction:column; }
+  .flip-front{ background:linear-gradient(155deg, var(--bg-2), #0f1f1b); border:1px solid var(--line); justify-content:space-between; }
+  .flip-back{ background:var(--paper); color:var(--ink); transform:rotateY(180deg); border:1px solid var(--paper-dim); justify-content:center; }
+  .flip-num{ font-size:11px; color:var(--gold); }
+  .flip-front h3{ font-size:19px; margin:auto 0 4px; line-height:1.25; font-weight:600; }
+  .flip-hint{ font-size:11px; color:var(--paper-dim); text-transform:uppercase; letter-spacing:0.12em; opacity:0.7; }
+  .flip-back p{ font-size:14px; line-height:1.55; margin:0; color:var(--ink-soft); }
+  .flip-back .flip-tag{ font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:var(--gold-dim); margin-bottom:8px; font-weight:600; }
+  .fixed .flip-front{ background:linear-gradient(155deg, #2a1c1a, #17100f); }
+  .fixed .flip-back .flip-tag{ color:var(--rose-dim); }
+
+  .nav-row{ display:flex; align-items:center; justify-content:space-between; gap:14px; margin-top:8px; flex-wrap:wrap; }
+  .dots{ display:flex; gap:8px; }
+  .dot{ width:7px; height:7px; border-radius:50%; background:var(--line-strong); }
+  .dot.on{ background:var(--gold); }
+  .btn{
+    font-family:'Work Sans',sans-serif; font-weight:600; font-size:14px; letter-spacing:0.01em;
+    padding:13px 24px; border-radius:3px; border:1px solid transparent; cursor:pointer;
+    display:inline-flex; align-items:center; gap:8px; transition:transform .15s ease, background .2s ease, border-color .2s ease;
+  }
+  .btn:active{ transform:scale(0.98); }
+  .btn-primary{ background:var(--gold); color:#1a1305; }
+  .btn-primary:hover{ background:#e3b25a; }
+  .btn-ghost{ background:transparent; color:var(--paper-dim); border-color:var(--line-strong); }
+  .btn-ghost:hover{ color:var(--paper); border-color:var(--paper); }
+  .btn:disabled{ opacity:0.35; cursor:not-allowed; }
+  .btn:disabled:hover{ background:var(--gold); }
+
+  .cta-block{ text-align:center; margin-top:46px; padding-top:34px; border-top:1px dashed var(--line); }
+  .cta-block p{ color:var(--paper-dim); font-size:13px; margin:14px 0 0; max-width:52ch; margin-left:auto; margin-right:auto; }
+
+  .start-points{ display:flex; gap:14px; margin:0 0 38px; flex-wrap:wrap; }
+  .start-point{ flex:1 1 140px; background:var(--bg-2); border:1px solid var(--line); border-radius:8px; padding:16px; display:flex; flex-direction:column; gap:6px; }
+  .start-num{ font-size:22px; color:var(--gold); }
+  .start-point span:last-child{ font-size:12.5px; color:var(--paper-dim); line-height:1.4; }
+
+  .learn-more{ margin-top:54px; padding-top:38px; border-top:1px dashed var(--line); margin-bottom:26px; }
+  .section-label{ font-size:12px; text-transform:uppercase; letter-spacing:0.16em; font-weight:600; margin:0 0 14px; }
+
+  /* quiz */
+  .quiz-head{ display:flex; justify-content:flex-end; align-items:baseline; margin-bottom:22px; gap:10px; }
+  .q-count{ color:var(--gold); }
+  .q-section{ color:var(--paper-dim); text-transform:uppercase; font-size:11px; letter-spacing:0.14em; }
+  .q-card{ background:var(--paper); color:var(--ink); border-radius:8px; padding:36px 32px; box-shadow:var(--shadow); }
+  .q-text{ font-size:22px; line-height:1.4; font-weight:500; margin:0 0 26px; font-family:'Fraunces',serif; }
+  .likert{ display:flex; flex-direction:column; gap:8px; }
+  .opt{ display:flex; align-items:center; gap:14px; padding:13px 16px; border:1px solid rgba(19,36,32,0.14); border-radius:5px; cursor:pointer; transition:border-color .15s ease, background .15s ease; }
+  .opt:hover{ border-color:rgba(19,36,32,0.35); }
+  .opt.sel{ border-color:var(--gold-dim); background:rgba(215,165,68,0.12); }
+  .opt input{ accent-color:var(--gold-dim); width:16px; height:16px; flex:none; }
+  .opt-label{ font-size:14.5px; line-height:1.4; }
+  .opt-scale{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft); flex:none; width:20px; }
+  .likert-scale-note{ display:flex; justify-content:space-between; font-size:11px; color:var(--ink-soft); margin-top:10px; padding:0 2px; }
+
+  .q-nav{ display:flex; justify-content:space-between; align-items:center; margin-top:26px; }
+
+  /* result */
+  .result-head{ text-align:center; margin-bottom:8px; }
+  .result-cat{ font-size:clamp(26px,4.4vw,40px); margin:6px 0 4px; }
+  .result-score{ font-family:'IBM Plex Mono',monospace; font-size:15px; color:var(--gold); }
+  .plant-wrap{ display:flex; justify-content:center; margin:26px 0 6px; }
+  .result-desc{ max-width:62ch; margin:0 auto 30px; text-align:center; color:var(--paper-dim); font-size:15.5px; line-height:1.7; }
+
+  .aspect-panel{ background:var(--bg-2); border:1px solid var(--line); border-radius:8px; padding:26px 26px 8px; margin-bottom:22px; }
+  .aspect-panel h3{ margin:0 0 18px; font-size:17px; font-weight:600; }
+  .aspect-row{ margin-bottom:16px; }
+  .aspect-top{ display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px; }
+  .aspect-name{ color:var(--paper); }
+  .aspect-val{ font-family:'IBM Plex Mono',monospace; color:var(--paper-dim); }
+  .aspect-bar{ height:6px; border-radius:3px; background:rgba(244,239,224,0.1); overflow:hidden; }
+  .aspect-fill{ height:100%; border-radius:3px; background:linear-gradient(90deg, var(--sage-dim), var(--sage)); transition:width 1s cubic-bezier(.3,.7,.2,1); }
+
+  .highlight-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:26px; }
+  @media (max-width:640px){ .highlight-grid{ grid-template-columns:1fr; } }
+  .highlight-card{ border:1px solid var(--line); border-radius:8px; padding:20px; }
+  .highlight-card.strong{ border-color: rgba(143,180,143,0.4); background:rgba(143,180,143,0.06); }
+  .highlight-card.grow{ border-color: rgba(215,165,68,0.4); background:rgba(215,165,68,0.06); }
+  .highlight-tag{ font-size:10px; text-transform:uppercase; letter-spacing:0.14em; margin-bottom:8px; }
+  .highlight-card.strong .highlight-tag{ color:var(--sage); }
+  .highlight-card.grow .highlight-tag{ color:var(--gold); }
+  .highlight-card h4{ margin:0 0 6px; font-size:16px; font-family:'Fraunces',serif; }
+  .highlight-card p{ margin:0; font-size:13px; color:var(--paper-dim); line-height:1.55; }
+
+  .note-box{ font-size:12.5px; color:var(--paper-dim); line-height:1.7; border-top:1px dashed var(--line); padding-top:20px; margin-top:8px; }
+  .note-box strong{ color:var(--paper); }
+
+  .result-actions{ display:flex; justify-content:center; gap:12px; margin-top:30px; flex-wrap:wrap; }
+
+  footer.foot{ text-align:center; margin-top:50px; font-size:11px; color:var(--ink-soft); }
+
+  /* ---------------- mobile-friendly refinements ---------------- */
+  body{ overflow-x:hidden; }
+  .flip-face{ overflow-y:auto; }
+  .btn{ min-height:46px; }
+  .opt{ min-height:46px; }
+  input[type="radio"]{ min-width:18px; min-height:18px; }
+
+  @media (max-width:760px){
+    .app{ padding:28px 18px 60px; }
+    h1.title{ font-size:clamp(26px,7.2vw,36px); }
+    .lede{ font-size:15px; line-height:1.6; }
+    .card-grid{ gap:14px; margin-bottom:26px; }
+    .flip-card{ height:250px; }
+    .flip-face{ padding:18px; }
+    .flip-front h3{ font-size:17px; }
+    .flip-back p{ font-size:13.5px; }
+    .q-card{ padding:22px 18px; border-radius:10px; }
+    .q-text{ font-size:19px; }
+    .opt{ padding:12px 14px; gap:12px; }
+    .opt-label{ font-size:14px; }
+    .quiz-head{ margin-bottom:14px; }
+    .rail{ margin-bottom:26px; }
+    .rail-label{ font-size:10px; }
+    .start-points{ gap:10px; margin-bottom:30px; }
+    .start-point{ flex:1 1 100%; flex-direction:row; align-items:center; justify-content:space-between; }
+    .aspect-panel{ padding:20px 18px 6px; }
+    .highlight-grid{ gap:12px; }
+    .plant-wrap svg{ width:180px; height:auto; }
+    .result-desc{ font-size:14.5px; }
+    .learn-more{ margin-top:42px; padding-top:30px; }
+  }
+
+  @media (max-width:480px){
+    .app{ padding:22px 14px 50px; }
+    .nav-row{ flex-direction:column-reverse; align-items:stretch; gap:12px; }
+    .nav-row .btn{ width:100%; justify-content:center; }
+    .nav-row .dots{ justify-content:center; }
+    .q-nav{ flex-direction:column-reverse; gap:10px; }
+    .q-nav .btn{ width:100%; justify-content:center; }
+    #btnBack{ order:2; }
+    .cta-block{ margin-top:34px; padding-top:26px; }
+    .result-actions .btn{ width:100%; justify-content:center; }
+    .eyebrow{ font-size:11px; letter-spacing:0.16em; }
+    .q-text{ font-size:18px; }
+    .flip-card{ height:270px; }
+  }
+</style>
+</head>
+<body>
+<div class="noise"></div>
+<div class="app">
+
+  <div class="rail" id="rail" style="display:none;">
+    <span class="rail-label mono" id="railLabel">01 / 03</span>
+    <div class="rail-track"><div class="rail-fill" id="railFill" style="width:0%"></div></div>
+  </div>
+
+  <!-- SCREEN 1: START -->
+  <section class="screen active" id="screen-start">
+    <p class="eyebrow">Refleksi Rekan Sejawat</p>
+    <h1 class="title"><span class="accent-growth">Growth Mindset</span> atau <span class="accent-fixed">Fixed Mindset</span>?</h1>
+    <p class="lede">Isi 21 pernyataan singkat tentang kebiasaan Anda sebagai guru dalam menghadapi perubahan, tantangan, umpan balik, dan kegagalan. Di akhir, Anda akan mendapatkan hasil analisis lengkap — beserta penjelasan tentang growth mindset dan fixed mindset.</p>
+
+    <div class="start-points">
+      <div class="start-point"><span class="start-num mono">21</span><span>pernyataan &amp; situasi singkat</span></div>
+      <div class="start-point"><span class="start-num mono">~7</span><span>menit pengerjaan</span></div>
+      <div class="start-point"><span class="start-num mono">8</span><span>aspek dianalisis di hasil akhir</span></div>
+    </div>
+
+    <div class="nav-row" style="justify-content:flex-start;">
+      <button class="btn btn-primary" onclick="startQuiz()">Mulai Mengerjakan Soal →</button>
+    </div>
+
+    <div class="cta-block">
+      <p>Jawab sesuai kondisi Anda saat ini, bukan jawaban yang menurut Anda paling ideal. Instrumen ini bukan alat diagnosis psikologis.</p>
+    </div>
+  </section>
+
+  <!-- SCREEN 2: QUIZ -->
+  <section class="screen" id="screen-quiz">
+    <div class="quiz-head">
+      <span class="q-count mono" id="qCount">1 / 21</span>
+    </div>
+    <div class="q-card">
+      <h2 class="q-text" id="qText">—</h2>
+      <div class="likert" id="qOptions"></div>
+      <div class="likert-scale-note" id="qScaleNote"></div>
+    </div>
+    <div class="q-nav">
+      <button class="btn btn-ghost" id="btnBack" onclick="prevQuestion()">← Sebelumnya</button>
+      <button class="btn btn-primary" id="btnNext" onclick="nextQuestion()" disabled>Selanjutnya →</button>
+    </div>
+  </section>
+
+  <!-- SCREEN 4: RESULT -->
+  <section class="screen" id="screen-result">
+    <div class="result-head">
+      <p class="eyebrow" style="justify-content:center;">Hasil Refleksi Anda</p>
+      <h1 class="result-cat display" id="resultCat">—</h1>
+      <p class="result-score" id="resultScore">Skor rata-rata: 0.00 / 5.00</p>
+    </div>
+
+    <div class="plant-wrap" id="plantWrap"></div>
+
+    <p class="result-desc" id="resultDesc">—</p>
+
+    <div class="aspect-panel">
+      <h3>Peta 8 Aspek Pola Pikir</h3>
+      <div id="aspectList"></div>
+    </div>
+
+    <div class="highlight-grid">
+      <div class="highlight-card strong">
+        <div class="highlight-tag">Aspek Paling Kuat</div>
+        <h4 id="strongAspect">—</h4>
+        <p id="strongAspectDesc"></p>
+      </div>
+      <div class="highlight-card grow">
+        <div class="highlight-tag">Aspek untuk Dikembangkan</div>
+        <h4 id="growAspect">—</h4>
+        <p id="growAspectDesc"></p>
+      </div>
+    </div>
+
+    <div class="note-box">
+      <strong>Catatan interpretasi.</strong> Hasil ini bukan alat diagnosis psikologis dan bukan untuk memberi label permanen. Seseorang bisa menunjukkan growth mindset pada satu aspek dan fixed mindset pada aspek lain — gunakan hasil ini sebagai bahan refleksi dan pengembangan diri, bukan vonis.
+    </div>
+
+    <div class="learn-more">
+      <p class="eyebrow" style="justify-content:center;">Pelajari Lebih Lanjut</p>
+      <h2 class="title" style="text-align:center; font-size:clamp(24px,4.4vw,34px);">Memahami Kedua Pola Pikir</h2>
+      <p class="lede" style="text-align:center; margin-left:auto; margin-right:auto;">Sebelum mengulang tes atau berdiskusi dengan rekan sejawat, ketuk kartu di bawah untuk membaca lebih dalam apa yang membedakan growth mindset dan fixed mindset.</p>
+    </div>
+
+    <p class="section-label accent-growth">Growth Mindset</p>
+    <div class="card-grid" id="growthCards"></div>
+
+    <p class="section-label accent-fixed">Fixed Mindset</p>
+    <div class="card-grid" id="fixedCards"></div>
+
+    <div class="result-actions">
+      <button class="btn btn-ghost" onclick="restart()">Ulangi Tes</button>
+    </div>
+  </section>
+
+  <footer class="foot">Instrumen Growth &amp; Fixed Mindset untuk Rekan Sejawat Guru</footer>
+</div>
+
+<script>
+/* ---------------- content data ---------------- */
+const growthCardData = [
+  { n:'01', title:'Apa itu Growth Mindset?', tag:'Definisi', text:'Meyakini bahwa kompetensi profesional sebagai guru bisa terus dikembangkan lewat belajar, latihan, pengalaman, dan refleksi — bukan kemampuan yang sudah "selesai" begitu seseorang menjadi guru.' },
+  { n:'02', title:'Menghadapi Kegagalan', tag:'Strategi & Evaluasi', text:'Ketika sebuah strategi pembelajaran kurang berhasil, kegagalan itu tidak dianggap kegagalan diri — melainkan informasi untuk mencari penyebab dan mencoba pendekatan lain.' },
+  { n:'03', title:'Menerima Umpan Balik', tag:'Feedback', text:'Masukan dari rekan sejawat, kepala sekolah, atau peserta didik dipandang sebagai sumber pengembangan diri, bukan ancaman terhadap kompetensi profesional.' },
+  { n:'04', title:'Potensi Peserta Didik', tag:'Keyakinan pada Siswa', text:'Peserta didik yang awalnya kesulitan diyakini dapat berkembang jika mendapatkan strategi, dukungan, dan kesempatan belajar yang tepat.' },
+];
+const fixedCardData = [
+  { n:'01', title:'Apa itu Fixed Mindset?', tag:'Definisi', text:'Kecenderungan memandang kemampuan mengajar terutama sebagai bakat bawaan yang sudah tetap, sehingga pelatihan atau hal baru dianggap kurang perlu bagi yang "sudah berbakat" atau "sudah lama mengajar".' },
+  { n:'02', title:'Menghadapi Kegagalan', tag:'Strategi & Evaluasi', text:'Jika sebuah metode pernah gagal diterapkan, muncul keengganan mencobanya lagi — seolah hasil sebelumnya menentukan hasil secara permanen, walau kondisinya sudah berbeda.' },
+  { n:'03', title:'Menerima Umpan Balik', tag:'Feedback', text:'Masukan dari rekan sejawat terasa tidak nyaman karena dipersepsikan sebagai kritik terhadap kompetensi atau harga diri, bukan bahan perbaikan.' },
+  { n:'04', title:'Potensi Peserta Didik', tag:'Keyakinan pada Siswa', text:'Jika peserta didik tetap kesulitan setelah dijelaskan, muncul kecenderungan menyimpulkan bahwa kemampuan mereka memang terbatas — bukan mempertimbangkan strategi dan dukungan lain.' },
+];
+
+/* aspect labels */
+const aspectMeta = {
+  kompetensi:{ label:'Pengembangan Kompetensi', growth:'Mau belajar dan berkembang', fixed:'Merasa kemampuan sudah cukup/tetap' },
+  perubahan:{ label:'Perubahan Pembelajaran', growth:'Mencoba dan mengevaluasi', fixed:'Mempertahankan cara lama tanpa evaluasi' },
+  feedback:{ label:'Umpan Balik (Feedback)', growth:'Mencari dan memanfaatkan masukan', fixed:'Defensif atau menghindari masukan' },
+  kegagalan:{ label:'Menghadapi Kegagalan', growth:'Bahan evaluasi dan perbaikan', fixed:'Bukti bahwa metode/orang tidak mampu' },
+  teknologi:{ label:'Teknologi & Inovasi', growth:'Mau mempelajari dan mencoba', fixed:'Menganggap bukan bidangnya' },
+  rekan:{ label:'Keberhasilan Rekan Sejawat', growth:'Sumber inspirasi dan belajar', fixed:'Sumber perbandingan/ancaman' },
+  peserta:{ label:'Potensi Peserta Didik', growth:'Percaya dapat berkembang', fixed:'Menganggap kemampuan terbatas' },
+  tantangan:{ label:'Tantangan Profesional', growth:'Kesempatan belajar', fixed:'Sesuatu yang sebaiknya dihindari' },
+};
+
+/* likert items: growth (direct) and fixed (reversed) */
+const likertItems = [
+  { id:1, type:'growth', aspect:'kompetensi', text:'Saya percaya kemampuan saya sebagai guru masih dapat berkembang melalui belajar, latihan, pengalaman, dan refleksi.' },
+  { id:2, type:'growth', aspect:'perubahan', text:'Ketika strategi pembelajaran yang saya gunakan kurang berhasil, saya berusaha mencari penyebab dan mencoba pendekatan lain.' },
+  { id:3, type:'growth', aspect:'teknologi', text:'Saya bersedia mempelajari metode, teknologi, atau pendekatan pembelajaran baru meskipun pada awalnya saya belum menguasainya.' },
+  { id:4, type:'growth', aspect:'feedback', text:'Saya menganggap masukan dari rekan sejawat, kepala sekolah, atau peserta didik dapat membantu meningkatkan kualitas pembelajaran saya.' },
+  { id:5, type:'growth', aspect:'rekan', text:'Ketika melihat rekan sejawat berhasil menerapkan suatu metode, saya tertarik mempelajari bagaimana metode tersebut dapat saya adaptasi.' },
+  { id:6, type:'growth', aspect:'tantangan', text:'Saya berani mencoba inovasi pembelajaran meskipun ada kemungkinan hasil awalnya belum sesuai harapan.' },
+  { id:7, type:'growth', aspect:'peserta', text:'Saya percaya peserta didik yang awalnya mengalami kesulitan dapat berkembang jika mendapatkan strategi, dukungan, dan kesempatan belajar yang tepat.' },
+  { id:8, type:'growth', aspect:'kegagalan', text:'Ketika mendapatkan hasil evaluasi atau supervisi yang belum sesuai harapan, saya menggunakannya sebagai dasar untuk memperbaiki praktik mengajar.' },
+  { id:9, type:'fixed', aspect:'perubahan', text:'Saya merasa setelah memiliki pengalaman mengajar yang cukup lama, perubahan metode pembelajaran tidak terlalu diperlukan.' },
+  { id:10, type:'fixed', aspect:'kegagalan', text:'Jika suatu metode pembelajaran sudah pernah gagal saya terapkan, saya cenderung tidak ingin mencobanya lagi meskipun kondisinya sudah berbeda.' },
+  { id:11, type:'fixed', aspect:'teknologi', text:'Saya merasa menggunakan teknologi atau metode pembelajaran baru lebih cocok untuk guru yang lebih muda atau lebih menguasai teknologi.' },
+  { id:12, type:'fixed', aspect:'feedback', text:'Saya merasa kurang nyaman ketika rekan sejawat memberikan masukan terhadap cara saya mengajar.' },
+  { id:13, type:'fixed', aspect:'rekan', text:'Ketika rekan sejawat berhasil menerapkan inovasi pembelajaran yang belum berhasil saya lakukan, saya merasa kemampuan saya sebagai guru kalah dibandingkan dirinya.' },
+  { id:14, type:'fixed', aspect:'peserta', text:'Jika peserta didik tetap mengalami kesulitan setelah saya menjelaskan materi, saya cenderung berpikir bahwa kemampuan mereka memang terbatas.' },
+  { id:15, type:'fixed', aspect:'tantangan', text:'Saya cenderung memilih metode pembelajaran yang sudah biasa saya gunakan karena saya ingin menghindari kemungkinan gagal ketika mencoba sesuatu yang baru.' },
+  { id:16, type:'fixed', aspect:'kompetensi', text:'Menurut saya, guru yang memang berbakat mengajar tidak perlu terlalu banyak mengikuti pelatihan atau belajar hal baru.' },
+];
+
+const scaleLabels = ['Sangat Tidak Setuju','Tidak Setuju','Ragu-ragu / Netral','Setuju','Sangat Setuju'];
+
+const situationalItems = [
+  { id:17, aspect:'perubahan', text:'Sekolah menerapkan pendekatan pembelajaran baru yang belum pernah Anda gunakan. Apa respons yang paling menggambarkan Anda?',
+    options:[ 'Saya memilih tetap menggunakan cara lama karena sudah terbukti bagi saya.', 'Saya menunggu sampai ada contoh yang benar-benar berhasil sebelum mencobanya.', 'Saya mempelajarinya, mencoba dalam skala kecil, lalu mengevaluasi hasilnya.', 'Saya merasa pendekatan baru tersebut tidak cocok dengan kemampuan saya.' ] },
+  { id:18, aspect:'feedback', text:'Setelah supervisi, Anda mendapatkan beberapa catatan yang menunjukkan bahwa pembelajaran Anda masih perlu diperbaiki. Apa yang paling mungkin Anda lakukan?',
+    options:[ 'Merasa bahwa penilaian tersebut tidak menggambarkan kemampuan saya.', 'Menganggap catatan tersebut sebagai kritik pribadi.', 'Memilih bagian yang relevan, mendiskusikannya, lalu membuat perbaikan.', 'Menghindari supervisi berikutnya karena merasa tidak nyaman.' ] },
+  { id:19, aspect:'teknologi', text:'Rekan sejawat menggunakan media pembelajaran digital dan hasilnya terlihat menarik. Apa respons Anda?',
+    options:[ 'Menganggap dia memang lebih berbakat dalam teknologi.', 'Merasa bahwa teknologi bukan bidang saya.', 'Bertanya dan belajar bagaimana media tersebut dibuat.', 'Menganggap penggunaan teknologi hanya cocok untuk mata pelajaran tertentu.' ] },
+  { id:20, aspect:'kegagalan', text:'Suatu inovasi pembelajaran yang Anda coba ternyata tidak memberikan hasil seperti yang diharapkan. Apa yang Anda lakukan?',
+    options:[ 'Berhenti melakukan inovasi karena merasa cara tersebut tidak berhasil.', 'Menyimpulkan bahwa peserta didik memang tidak cocok dengan metode tersebut.', 'Menganalisis faktor penyebab, meminta feedback, lalu memodifikasi strategi.', 'Kembali sepenuhnya ke metode lama tanpa melakukan evaluasi.' ] },
+  { id:21, aspect:'kompetensi', text:'Anda diminta mengikuti pelatihan tentang kompetensi yang belum Anda kuasai. Bagaimana respons Anda?',
+    options:[ 'Merasa pelatihan tersebut tidak terlalu diperlukan karena pengalaman mengajar sudah cukup.', 'Mengikuti sekadar memenuhi kewajiban.', 'Mengikuti dengan tujuan memperoleh pengetahuan baru dan menerapkannya secara bertahap.', 'Merasa kurang percaya diri karena peserta lain mungkin lebih menguasai materi.' ] },
+];
+
+/* ---------------- build question list ---------------- */
+const questions = [];
+likertItems.forEach(it => questions.push({ kind:'likert', ...it }));
+situationalItems.forEach(it => questions.push({ kind:'situational', ...it }));
+
+/* shuffle so growth / fixed / situational items are fully mixed, not blocked by type */
+function shuffle(arr){
+  for(let i = arr.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+shuffle(questions);
+
+const answers = {}; // id -> growth-direction score 1..5
+let qIndex = 0;
+
+/* ---------------- render flip cards ---------------- */
+function renderCards(containerId, data, extraClass){
+  const el = document.getElementById(containerId);
+  el.innerHTML = data.map((c,i) => `
+    <div class="flip-card ${extraClass}" onclick="this.classList.toggle('flipped')">
+      <div class="flip-inner">
+        <div class="flip-face flip-front">
+          <span class="flip-num mono">${c.n}</span>
+          <div>
+            <h3>${c.title}</h3>
+            <span class="flip-hint">Ketuk untuk membuka →</span>
+          </div>
+        </div>
+        <div class="flip-face flip-back">
+          <div class="flip-tag">${c.tag}</div>
+          <p>${c.text}</p>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+renderCards('growthCards', growthCardData, '');
+renderCards('fixedCards', fixedCardData, 'fixed');
+
+/* ---------------- screen nav ---------------- */
+function goScreen(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function startQuiz(){
+  document.getElementById('rail').style.display = 'flex';
+  goScreen('screen-quiz');
+  qIndex = 0;
+  renderQuestion();
+}
+
+/* ---------------- quiz rendering ---------------- */
+function renderQuestion(){
+  const q = questions[qIndex];
+  document.getElementById('qCount').textContent = (qIndex+1) + ' / ' + questions.length;
+  document.getElementById('railLabel').textContent = 'SOAL ' + (qIndex+1) + ' / ' + questions.length;
+  document.getElementById('railFill').style.width = Math.round(((qIndex)/(questions.length))*100) + '%';
+  document.getElementById('qText').textContent = q.text;
+
+  const optsEl = document.getElementById('qOptions');
+  const scaleNote = document.getElementById('qScaleNote');
+  optsEl.innerHTML = '';
+  scaleNote.innerHTML = '';
+
+  if(q.kind === 'likert'){
+    scaleNote.innerHTML = `<span>1 · Sangat Tidak Setuju</span><span>5 · Sangat Setuju</span>`;
+    for(let v=1; v<=5; v++){
+      const raw = v;
+      const chosenRaw = answers[q.id] !== undefined ? (q.type === 'fixed' ? 6 - answers[q.id] : answers[q.id]) : null;
+      const isSel = chosenRaw === raw;
+      const label = document.createElement('label');
+      label.className = 'opt' + (isSel ? ' sel' : '');
+      label.innerHTML = `<span class="opt-scale mono">${v}</span><input type="radio" name="q${q.id}" ${isSel?'checked':''}><span class="opt-label">${scaleLabels[v-1]}</span>`;
+      label.onclick = () => selectLikert(q, raw);
+      optsEl.appendChild(label);
+    }
+  } else {
+    const letters = ['A','B','C','D'];
+    q.options.forEach((optText,i) => {
+      const isSel = answers[q.id] !== undefined && answers['__raw'+q.id] === i;
+      const label = document.createElement('label');
+      label.className = 'opt' + (isSel ? ' sel' : '');
+      label.innerHTML = `<span class="opt-scale mono">${letters[i]}</span><input type="radio" name="q${q.id}" ${isSel?'checked':''}><span class="opt-label">${optText}</span>`;
+      label.onclick = () => selectSituational(q, i);
+      optsEl.appendChild(label);
+    });
+  }
+
+  document.getElementById('btnBack').style.visibility = qIndex === 0 ? 'hidden' : 'visible';
+  document.getElementById('btnNext').disabled = answers[q.id] === undefined;
+  document.getElementById('btnNext').textContent = qIndex === questions.length - 1 ? 'Lihat Hasil →' : 'Selanjutnya →';
+}
+
+function selectLikert(q, raw){
+  answers[q.id] = q.type === 'fixed' ? (6 - raw) : raw; // store in growth-direction
+  renderQuestion();
+}
+function selectSituational(q, idx){
+  answers['__raw'+q.id] = idx;
+  answers[q.id] = idx === 2 ? 5 : 2; // option C (index 2) = growth response per instrument
+  renderQuestion();
+}
+
+function nextQuestion(){
+  if(qIndex < questions.length - 1){
+    qIndex++;
+    renderQuestion();
+  } else {
+    showResult();
+  }
+}
+function prevQuestion(){
+  if(qIndex > 0){ qIndex--; renderQuestion(); }
+}
+
+/* ---------------- scoring & result ---------------- */
+function showResult(){
+  document.getElementById('rail').style.display = 'none';
+
+  const allIds = questions.map(q => q.id);
+  const total = allIds.reduce((s,id) => s + answers[id], 0);
+  const avg = total / allIds.length;
+
+  let cat, catClass, desc, stage;
+  if(avg >= 4.21){ cat='Growth Mindset Sangat Kuat'; desc='Anda secara konsisten memandang kemampuan mengajar sebagai sesuatu yang terus berkembang. Tantangan, kegagalan, dan masukan cenderung diolah menjadi bahan belajar, bukan ancaman. Pertahankan pola ini sambil tetap terbuka pada aspek yang masih bisa diperkuat di bawah.'; stage=5; }
+  else if(avg >= 3.41){ cat='Growth Mindset Kuat'; desc='Kecenderungan growth mindset Anda cukup menonjol — Anda umumnya terbuka pada perubahan dan umpan balik. Ada beberapa area yang masih bisa dikuatkan agar pola pikir ini semakin merata di semua aspek mengajar.'; stage=4; }
+  else if(avg >= 2.61){ cat='Seimbang / Fleksibel'; desc='Pola pikir Anda berada di titik tengah — pada sebagian situasi Anda terbuka untuk berkembang, namun pada situasi lain masih muncul kecenderungan bertahan pada cara lama. Ini titik awal yang baik untuk mulai memperkuat aspek-aspek tertentu secara sadar.'; stage=3; }
+  else if(avg >= 1.81){ cat='Cenderung Fixed Mindset'; desc='Beberapa respons Anda menunjukkan kecenderungan memandang kemampuan mengajar, umpan balik, atau tantangan sebagai sesuatu yang tetap dan berisiko. Ini wajar terjadi pada aspek tertentu — gunakan peta aspek di bawah untuk memilih satu area kecil sebagai titik mulai berkembang.'; stage=2; }
+  else { cat='Fixed Mindset Sangat Kuat'; desc='Secara umum, respons Anda menunjukkan kecenderungan menghindari tantangan, kegagalan, dan masukan sebagai bagian dari proses berkembang. Ini bukan penilaian permanen — banyak guru bergerak dari titik ini dengan langkah kecil dan konsisten, mulai dari satu aspek yang terasa paling ringan.'; stage=1; }
+
+  document.getElementById('resultCat').textContent = cat;
+  document.getElementById('resultCat').className = 'result-cat display ' + (avg>=2.61 ? 'accent-growth' : 'accent-fixed');
+  document.getElementById('resultScore').textContent = 'Skor rata-rata: ' + avg.toFixed(2) + ' / 5.00';
+  document.getElementById('resultDesc').textContent = desc;
+
+  renderPlant(stage);
+
+  // aspect scores
+  const aspectScores = {};
+  Object.keys(aspectMeta).forEach(k => aspectScores[k] = []);
+  questions.forEach(q => aspectScores[q.aspect].push(answers[q.id]));
+  const aspectAvg = {};
+  Object.keys(aspectScores).forEach(k => {
+    const arr = aspectScores[k];
+    aspectAvg[k] = arr.reduce((s,v)=>s+v,0) / arr.length;
+  });
+
+  const aspectListEl = document.getElementById('aspectList');
+  aspectListEl.innerHTML = Object.keys(aspectMeta).map(k => {
+    const val = aspectAvg[k];
+    const pct = (val/5*100).toFixed(0);
+    return `<div class="aspect-row">
+      <div class="aspect-top"><span class="aspect-name">${aspectMeta[k].label}</span><span class="aspect-val mono">${val.toFixed(2)}</span></div>
+      <div class="aspect-bar"><div class="aspect-fill" style="width:0%" data-w="${pct}"></div></div>
+    </div>`;
+  }).join('');
+  setTimeout(() => {
+    document.querySelectorAll('.aspect-fill').forEach(el => { el.style.width = el.getAttribute('data-w') + '%'; });
+  }, 80);
+
+  const sorted = Object.keys(aspectAvg).sort((a,b) => aspectAvg[b]-aspectAvg[a]);
+  const strongest = sorted[0], weakest = sorted[sorted.length-1];
+  document.getElementById('strongAspect').textContent = aspectMeta[strongest].label;
+  document.getElementById('strongAspectDesc').textContent = aspectMeta[strongest].growth + '.';
+  document.getElementById('growAspect').textContent = aspectMeta[weakest].label;
+  document.getElementById('growAspectDesc').textContent = 'Kecenderungan saat ini: ' + aspectMeta[weakest].fixed.toLowerCase() + '.';
+
+  goScreen('screen-result');
+}
+
+/* ---------------- signature: growing plant svg ---------------- */
+function renderPlant(stage){
+  // stage 1..5 controls how many leaf pairs + bloom are shown
+  const leafOpacity = i => i <= stage ? 1 : 0;
+  const stemHeight = 40 + stage*22;
+  const svg = `
+  <svg width="220" height="200" viewBox="0 0 220 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="110" cy="182" rx="60" ry="8" fill="rgba(244,239,224,0.06)"/>
+    <path d="M110 182 L110 ${182-stemHeight}" stroke="${stage<=2?'#8a7a52':'#8fb48f'}" stroke-width="4" stroke-linecap="round"
+      style="transition: d 1s ease;"/>
+    <!-- leaf pair 1 -->
+    <g style="opacity:${leafOpacity(1)}; transition:opacity .6s ease .1s;">
+      <path d="M110 ${182-stemHeight*0.35} C 90 ${182-stemHeight*0.30}, 82 ${182-stemHeight*0.48}, 100 ${182-stemHeight*0.55} C 108 ${182-stemHeight*0.5}, 110 ${182-stemHeight*0.4}, 110 ${182-stemHeight*0.35} Z" fill="#7fa77f"/>
+      <path d="M110 ${182-stemHeight*0.35} C 130 ${182-stemHeight*0.30}, 138 ${182-stemHeight*0.48}, 120 ${182-stemHeight*0.55} C 112 ${182-stemHeight*0.5}, 110 ${182-stemHeight*0.4}, 110 ${182-stemHeight*0.35} Z" fill="#8fb48f"/>
+    </g>
+    <!-- leaf pair 2 -->
+    <g style="opacity:${leafOpacity(2)}; transition:opacity .6s ease .25s;">
+      <path d="M110 ${182-stemHeight*0.62} C 86 ${182-stemHeight*0.58}, 76 ${182-stemHeight*0.78}, 98 ${182-stemHeight*0.84} C 108 ${182-stemHeight*0.78}, 110 ${182-stemHeight*0.68}, 110 ${182-stemHeight*0.62} Z" fill="#7fa77f"/>
+      <path d="M110 ${182-stemHeight*0.62} C 134 ${182-stemHeight*0.58}, 144 ${182-stemHeight*0.78}, 122 ${182-stemHeight*0.84} C 112 ${182-stemHeight*0.78}, 110 ${182-stemHeight*0.68}, 110 ${182-stemHeight*0.62} Z" fill="#a3c7a3"/>
+    </g>
+    <!-- leaf pair 3 -->
+    <g style="opacity:${leafOpacity(3)}; transition:opacity .6s ease .4s;">
+      <path d="M110 ${182-stemHeight*0.9} C 88 ${182-stemHeight*0.87}, 80 ${182-stemHeight*1.02}, 100 ${182-stemHeight*1.06} C 108 ${182-stemHeight*1.0}, 110 ${182-stemHeight*0.95}, 110 ${182-stemHeight*0.9} Z" fill="#8fb48f"/>
+      <path d="M110 ${182-stemHeight*0.9} C 132 ${182-stemHeight*0.87}, 140 ${182-stemHeight*1.02}, 120 ${182-stemHeight*1.06} C 112 ${182-stemHeight*1.0}, 110 ${182-stemHeight*0.95}, 110 ${182-stemHeight*0.9} Z" fill="#a3c7a3"/>
+    </g>
+    <!-- crown / bloom for top stages -->
+    <g style="opacity:${leafOpacity(4)}; transition:opacity .6s ease .55s;">
+      <circle cx="98" cy="${182-stemHeight-6}" r="12" fill="#9dc79d"/>
+      <circle cx="122" cy="${182-stemHeight-6}" r="12" fill="#8fb48f"/>
+    </g>
+    <g style="opacity:${leafOpacity(5)}; transition:opacity .6s ease .7s;">
+      <circle cx="110" cy="${182-stemHeight-18}" r="9" fill="#d7a544"/>
+      <circle cx="110" cy="${182-stemHeight-18}" r="3.5" fill="#f4efe0"/>
+    </g>
+    <!-- seed marker for weakest stage -->
+    <g style="opacity:${stage<=1?1:0}; transition:opacity .6s ease;">
+      <ellipse cx="110" cy="178" rx="7" ry="5" fill="#8a7a52"/>
+    </g>
+  </svg>`;
+  document.getElementById('plantWrap').innerHTML = svg;
+}
+
+function restart(){
+  Object.keys(answers).forEach(k => delete answers[k]);
+  qIndex = 0;
+  shuffle(questions);
+  goScreen('screen-start');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+</script>
+</body>
+</html>
